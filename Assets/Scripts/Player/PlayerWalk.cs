@@ -7,6 +7,8 @@ public class PlayerWalk : MonoBehaviour
     public InputActionAsset InputActions;
     // variable to reference the character controller component on the player game object
     private CharacterController controller;
+    // animator component to control the player's animations
+    private Animator animator;
     
     // Movement variables
     private InputAction movementAction;
@@ -42,6 +44,8 @@ public class PlayerWalk : MonoBehaviour
     // initialize the character controller and input actions
     private void Awake()
     {
+        animator = GetComponent<Animator>();
+        
         controller = GetComponent<CharacterController>();
         // find the player input action map and the movement action
         var playerMap = InputActions.FindActionMap("Player");
@@ -78,6 +82,10 @@ public class PlayerWalk : MonoBehaviour
         
         // move for jumping and falling
         move.y = verticalVelocity;
+        
+        float speed = movementInput.magnitude;
+        animator.SetFloat("Speed", speed);
+        animator.SetBool("IsJumping", !isGrounded);
         
         // Actually moves the player in the direction of the movement vector, multiplied by the walk speed and delta time
         controller.Move(move * Time.deltaTime);
