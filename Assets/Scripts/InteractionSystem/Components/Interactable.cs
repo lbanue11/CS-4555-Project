@@ -8,6 +8,7 @@ public class Interactable : MonoBehaviour, IInteractable
     [SerializeField] private string displayName = "Interact";
     [SerializeField] private bool isEnabled = true;
     [SerializeField] private UnityEvent OnInteract;
+    [SerializeField] private Color outlineColor = Color.blue;
     
     public string DisplayName => displayName;
     public bool CanInteract() => isEnabled;
@@ -18,7 +19,7 @@ public class Interactable : MonoBehaviour, IInteractable
     {
         outline = gameObject.AddComponent<Outline>();
         outline.OutlineMode = Outline.Mode.OutlineVisible;
-        outline.OutlineColor = Color.yellow;
+        outline.OutlineColor = outlineColor;
         outline.OutlineWidth = 1f;
         outline.enabled = false;
     }
