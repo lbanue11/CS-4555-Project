@@ -3,92 +3,102 @@ using UnityEngine.InputSystem;
 
 public class PlayerWalk : MonoBehaviour
 {
-    // variable to reference the input action asset that contains the player controls
     public InputActionAsset InputActions;
-    // variable to reference the character controller component on the player game object
+    [SerializeField] private Transform cameraTransform;
+
     private CharacterController controller;
-    // animator component to control the player's animations
     private Animator animator;
-    
-    // Movement variables
+
     private InputAction movementAction;
     private InputAction jumpAction;
-    
-    // variables to store the input values for movement
+
     private Vector2 movementInput;
 
-    // variables to control the speed of movement
     [SerializeField] private float WalkSpeed = 5f;
-    
+    [SerializeField] private float rotationSpeed = 10f;
     [SerializeField] private float jumpHeight = 2f;
     [SerializeField] private float gravity = -9.81f;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundDistance = 0.2f;
     [SerializeField] private LayerMask groundMask;
-    
+
     private float verticalVelocity;
     private bool isGrounded;
-    
-    // enable the player input action map when the script is enabled
+
     private void OnEnable()
     {
         InputActions.FindActionMap("Player").Enable();
     }
 
-    // disable the player input action map when the script is disabled
     private void OnDisable()
     {
         InputActions.FindActionMap("Player").Disable();
     }
 
-    // initialize the character controller and input actions
     private void Awake()
     {
         animator = GetComponent<Animator>();
-        
         controller = GetComponent<CharacterController>();
-        // find the player input action map and the movement action
+
         var playerMap = InputActions.FindActionMap("Player");
         movementAction = playerMap.FindAction("Move");
         jumpAction = playerMap.FindAction("Jump");
+
+        // If camera not assigned in Inspector, try Main Camera automatically
+        if (cameraTransform == null && Camera.main != null)
+        {
+            cameraTransform = Camera.main.transform;
+        }
     }
-    
-    // read the input values for movement and move the character controller
+
     private void Update()
     {
-        
-        // Check if the player is grounded
+        if (cameraTransform == null)
+        {
+            Debug.LogWarning("Camera Transform is not assigned on PlayerWalk.");
+            return;
+        }
+
         isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
-        
-        // Reset vertical velocity if grounded aka not falling or jumping
+
         if (isGrounded && verticalVelocity < 0)
-        {            
+        {
             verticalVelocity = -2f;
         }
-        
-        // jump if the jump action is triggered and the player is grounded
+
         if (jumpAction.WasPressedThisFrame() && isGrounded)
         {
             verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
-        
+
         verticalVelocity += gravity * Time.deltaTime;
-        
-        // read the input values for movement
+
         movementInput = movementAction.ReadValue<Vector2>();
 
-        // create a movement vector relative to the player's facing direction
-        Vector3 move = (transform.right * movementInput.x + transform.forward * movementInput.y) * WalkSpeed;
-        
-        // move for jumping and falling
+        Vector3 cameraForward = cameraTransform.forward;
+        Vector3 cameraRight = cameraTransform.right;
+
+        cameraForward.y = 0f;
+        cameraRight.y = 0f;
+
+        cameraForward.Normalize();
+        cameraRight.Normalize();
+
+        Vector3 moveDirection = cameraForward * movementInput.y + cameraRight * movementInput.x;
+
+        if (moveDirection.magnitude > 0.1f)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+        }
+
+        Vector3 move = moveDirection * WalkSpeed;
         move.y = verticalVelocity;
-        
+
         float speed = movementInput.magnitude;
         animator.SetFloat("Speed", speed);
         animator.SetBool("IsJumping", !isGrounded);
-        
-        // Actually moves the player in the direction of the movement vector, multiplied by the walk speed and delta time
+
         controller.Move(move * Time.deltaTime);
     }
-    
 }
