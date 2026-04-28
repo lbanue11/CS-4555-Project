@@ -28,4 +28,9 @@ public class PlayerStats : MonoBehaviour
 
         Debug.Log("Player took damage. Current health: " + currentHealth);
     }
+
+    public bool IsDead()
+    {
+        return currentHealth <= 0;
+    }
 }
