@@ -4,7 +4,10 @@ using UnityEngine.InputSystem;
 public class PlayerWalk : MonoBehaviour
 {
     public InputActionAsset InputActions;
+    
     [SerializeField] private Transform cameraTransform;
+    [SerializeField] private bool shouldFaceMoveDirection = false;
+    
 
     private CharacterController controller;
     private Animator animator;
@@ -80,25 +83,23 @@ public class PlayerWalk : MonoBehaviour
 
         cameraForward.y = 0f;
         cameraRight.y = 0f;
-
         cameraForward.Normalize();
         cameraRight.Normalize();
 
         Vector3 moveDirection = cameraForward * movementInput.y + cameraRight * movementInput.x;
 
-        if (moveDirection.magnitude > 0.1f)
+        if (shouldFaceMoveDirection && moveDirection.sqrMagnitude > 0.001f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            Quaternion toRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
+            transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, rotationSpeed * Time.deltaTime);
         }
 
         Vector3 move = moveDirection * WalkSpeed;
         move.y = verticalVelocity;
+        controller.Move(move * Time.deltaTime);
 
         float speed = movementInput.magnitude;
         animator.SetFloat("Speed", speed);
         animator.SetBool("IsJumping", !isGrounded);
-
-        controller.Move(move * Time.deltaTime);
     }
 }
